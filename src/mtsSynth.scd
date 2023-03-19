@@ -2,11 +2,11 @@ var dict = Dictionary();
 var mtsDict, synthCreator, synthTerminator, synthMovement;
 
 mtsDict = FileLoader(~mtsConstantsPath);
-//mtsDict[\synthSize]-(mtsDict[\synthSize]/2)
 
 synthCreator = {
-	arg mainVue, x, y;
+	arg mainVue, x, y, synths, synthTypes;
 	var synth, tFieldTmp;
+
 	synth = Rect(x-10, y-10, mtsDict[\synthSize], mtsDict[\synthSize]);
 	tFieldTmp = TextField(mainVue,
 		Rect(
@@ -17,7 +17,19 @@ synthCreator = {
 	tFieldTmp.font = mtsDict[\synthFont];
 	tFieldTmp.background_(mtsDict[\synthTypeLabelColor]);
 	tFieldTmp.stringColor_(mtsDict[\synthTypeStringColor]);
-	[synth, tFieldTmp];
+	tFieldTmp.action = {arg field;
+		if(((mtsDict[\synthNames].find([field.value])) != nil),
+			{
+				tFieldTmp.background_(mtsDict[\synthGoodTypeLabelColor]);
+			},
+			{
+				tFieldTmp.background_(mtsDict[\synthTypeLabelColor]);
+			}
+		);
+	};
+	synthTypes = synthTypes.add(tFieldTmp);
+	synths = synths.add(synth);
+	[synths, synthTypes];
 };
 
 synthTerminator = {
@@ -32,7 +44,8 @@ synthTerminator = {
 
 synthMovement = {
 	arg x, y, synths, synthTypes, clicked, mainVue, relativeWhere;
-	var synth, synthTmp, synthTypeTextTmp, tFieldTmp, rectTmp;
+	var synth, synthTmp, synthTypeTextTmp, tFieldTmp,
+	rectTmp, labelBackground, oldAction;
 
 	synth = synths.at(clicked);
 	synths.put(clicked, synth.origin =
@@ -45,15 +58,27 @@ synthMovement = {
 	synthTmp.origin = (Point(x+10, y+10) - relativeWhere);
 
 	synthTypeTextTmp = synthTypes[clicked].string;
+	oldAction = synthTypes[clicked].action;
+	labelBackground = synthTypes[clicked].background;
 	synthTypes[clicked].remove;
 	rectTmp = Rect(0,0,80,40);
 	rectTmp.origin = (Point(x+10,y+31) - relativeWhere);
 	tFieldTmp = TextField(mainVue, rectTmp).align_(\center);
 	tFieldTmp.font = mtsDict[\synthFont];
-	tFieldTmp.background_(mtsDict[\synthTypeLabelColor]);
+	tFieldTmp.background_(labelBackground);
 	tFieldTmp.stringColor_(mtsDict[\synthTypeStringColor]);
+	tFieldTmp.string = synthTypeTextTmp;
+	tFieldTmp.action = {arg field;
+		if(((mtsDict[\synthNames].find([field.value])) != nil),
+			{
+				tFieldTmp.background_(mtsDict[\synthGoodTypeLabelColor]);
+			},
+			{
+				tFieldTmp.background_(mtsDict[\synthTypeLabelColor]);
+			}
+		);
+	};
 	synthTypes[clicked] = tFieldTmp;
-	synthTypes[clicked].string = synthTypeTextTmp;
 
 	[synths, synthTypes, clicked];
 };

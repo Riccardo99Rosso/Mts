@@ -23,7 +23,8 @@ win = Window(mtsDict[\title], Rect(
 	mtsDict[\mainHeight]),
 ).layout_(
 	VLayout(
-		View().fixedHeight_(45).layout_(HLayout(
+		View().background_(mtsDict[\menuColor])
+		.fixedHeight_(45).layout_(HLayout(
 			ToolBar(
 				MenuAction("File", {
 					"File".postln;
@@ -68,7 +69,7 @@ win = Window(mtsDict[\title], Rect(
 			mtsDict[\mainWidth],
 			mtsDict[\mainHeight]
 		));
-	).margins_(0)
+	).margins_(0).spacing_(0)
 ).front;
 win.acceptsMouseOver = true;
 mainVue.background = mtsDict[\mainBackground];
@@ -103,11 +104,8 @@ mainVue.mouseDownAction = {
 		Menu(
 			MenuAction.separator.string_("Mts"),
 			MenuAction("New synth", {
-				var synthGen;
-
-				synthGen = mtsSynth[\newSynth].(mainVue, x, y);
-				synths = synths.add(synthGen[0]);
-				synthTypes = synthTypes.add(synthGen[1]);
+				#synths, synthTypes = mtsSynth[\newSynth].
+				(mainVue, x, y, synths, synthTypes);
 				win.refresh;
 			}),
 
@@ -162,13 +160,12 @@ mainVue.keyDownAction = {
 	if(keycode == 83 && modifiers == 0) {
 		var synthGen;
 
-		synthGen = mtsSynth[\newSynth].(mainVue, myX, myY);
-		synths = synths.add(synthGen[0]);
-		synthTypes = synthTypes.add(synthGen[1]);
+		#synths, synthTypes = mtsSynth[\newSynth].
+		(mainVue, myX, myY, synths, synthTypes);
 		win.refresh;
 	};
 
-	[view, char, modifiers, unicode,keycode].postln;
+	//[view, char, modifiers, unicode,keycode].postln;
 };
 
 mainVue.mouseUpAction = {
