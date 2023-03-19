@@ -1,7 +1,7 @@
 (
 var win, mainVue, s, synths, clicked = nil, relativeWhere, synthTypes,
 myX, myY;
-var mtsDict, mtsSynth;
+var mtsDict, mtsSynth, mtsWebDoc;
 /*** INITIALIZATIONS ***/
 s = Server.local;
 
@@ -10,8 +10,10 @@ s = Server.local;
 ~path = thisProcess.nowExecutingPath.replace("mtsMain.scd", "");
 ~mtsConstantsPath = ~path ++ "mtsConstants.scd";
 ~mtsSynthPath = ~path ++ "mtsSynth.scd";
+~mtsWebDocPath = ~path ++ "mtsWebDocumentation.scd";
 mtsDict = FileLoader(~mtsConstantsPath);
 mtsSynth = FileLoader(~mtsSynthPath);
+mtsWebDoc = FileLoader(~mtsWebDocPath);
 
 /*** WINDOWS GENERATOR ***/
 win = Window(mtsDict[\title], Rect(
@@ -50,9 +52,14 @@ win = Window(mtsDict[\title], Rect(
 				MenuAction("Put", {
 					"Pur".postln }
 				).font_(mtsDict[\menuFont]),
-				MenuAction("Help", {
-					"Help".postln }
-				).font_(mtsDict[\menuFont])
+				MenuAction("Help",{
+					Menu(
+						MenuAction("About Mts", {
+							"About Mts".postln;
+							mtsWebDoc[\webDoc].();
+						})
+					).front
+				}).font_(mtsDict[\menuFont]);
 			);
 		)),
 		mainVue = UserView(win, Rect(
