@@ -155,37 +155,37 @@ mainVue.mouseDownAction = {
 				"Properties".postln;
 			}),
 			MenuAction("Delete synth", {
-				var busSize, toRemove;
+				var busSize, toRemove, allBusTmp, i = 0;
 
-				allBus.do({
-					arg bus, i;
-					var sender, receiver;
-					var toRemove = [];
-					clicked = clicked;
-					sender = bus.x;
-					receiver = bus.y;
+				while({i < allBus.size},
+					{
+						var bus, sender, receiver;
 
-					if(sender == clicked)
-					{
-						"sender".postln;
-						toRemove.add(clicked);
-						allBus.removeAt(i);
-						allBusStart.removeAt(i);
-						allBusEnd.removeAt(i);
-					};
-					if(receiver == clicked)
-					{
-						"receiver".postln;
-						toRemove.add(clicked);
-					}
+						bus = allBus[i];
+						sender = bus.x;
+						receiver = bus.y;
+						if(((sender == clicked)||(receiver == clicked)),
+							{
+								allBus.removeAt(i);
+								allBusStart.removeAt(i);
+								allBusEnd.removeAt(i);
+
+							},
+							{
+								if((sender.notNil) && (sender > clicked)){
+									sender = sender-1;
+									allBus[i] = Point(sender, receiver);
+								};
+								if((receiver.notNil) && (receiver > clicked)){
+									receiver = receiver - 1;
+									allBus[i] = Point(sender, receiver);
+								};
+								i = i + 1;
+							}
+						);
+						allBus.postln;
 				});
 
-				toRemove.do({
-					arg i;
-					allBus.removeAt(i);
-					allBusStart.removeAt(i);
-					allBusEnd.removeAt(i);
-				});
 				#synths, clicked =
 				mtsSynth[\deleteSynth].(synths, clicked, synthTypes);
 				busSize = allBus.size;
@@ -214,7 +214,7 @@ mainVue.mouseDownAction = {
 
 mainVue.mouseMoveAction = {
 	arg v, x, y, mod, button;
-	var synth, synthTmp, synthTypeTextTmp, tFieldTmp, rectTmp;
+	var synth, synthTmp, synthTypeTextTmp, tFieldTmp, rectTmp, centroid;
 
 	if((clicked.notNil) &&
 		(createBus == false) &&
@@ -223,6 +223,27 @@ mainVue.mouseMoveAction = {
 		(x <= (mainVue.bounds.width)) &&
 		(y <= (mainVue.bounds.height))){
 
+		centroid = synths[clicked].origin;
+		centroid = Point(
+			(centroid.x+(mtsDict[\synthSize]/2)),
+			(centroid.y)+(mtsDict[\synthSize]/2));
+
+		allBus.do({
+			arg bus, i;
+			var sender, receiver;
+
+			sender = bus.x;
+			receiver = bus.y;
+
+			if((sender == clicked)){
+				allBusStart[i] = centroid;
+			};
+			if((receiver == clicked)){
+				allBusEnd[i] = centroid;
+			};
+
+		});
+
 		#synths, synthTypes, clicked =
 		mtsSynth[\synthMovement].(
 			x, y, synths, synthTypes, clicked, mainVue, relativeWhere);
@@ -230,7 +251,6 @@ mainVue.mouseMoveAction = {
 	};
 
 	if((createBus == true)) {
-		//postf("To: (%,%)\n", x, y);
 		allBusEnd[currBus] = Point(x, y);
 		win.refresh;
 	};
@@ -243,9 +263,9 @@ mainVue.mouseUpAction = {
 
 	if((button == mtsDict[\leftClick]) && (createBus == true)) {
 		createBus = false;
-		//postf("End: (%,%)\n", x, y);
 
-		synths.do { |synth, i|
+		synths.do {
+			arg synth, i;
 			if(synth.contains(Point(x, y)), {
 				busReceiver = i;
 				relativeWhere = Point(x, y) - synth.origin;
@@ -264,7 +284,7 @@ mainVue.mouseUpAction = {
 					(centroid.y)+(mtsDict[\synthSize]/2));
 				allBusEnd[currBus] = centroid;
 				allBus = allBus.add(Point(clicked, busReceiver));
-				//clicked.postln;
+				allBus.postln;
 				win.refresh;
 			}
 		);
@@ -309,7 +329,7 @@ mainVue.keyDownAction = {
 		win.refresh;
 	};
 
-	[view, char, modifiers, unicode,keycode].postln;
+	//[view, char, modifiers, unicode,keycode].postln;
 };
 
 
