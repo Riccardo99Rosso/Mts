@@ -1,5 +1,6 @@
 var dict = Dictionary();
-var mtsDict, synthCreator, synthTerminator, synthMovement;
+var mtsDict, synthCreator, synthTerminator, synthMovement,
+busCreator, busEntered, createBusEliminator;
 
 mtsDict = FileLoader(~mtsConstantsPath);
 
@@ -37,19 +38,76 @@ synthCreator = {
 };
 
 synthTerminator = {
-	arg synths, clicked, synthTypes;
+	arg synths, clicked, synthTypes, allBus, allBusStart, allBusEnd;
+	var i = 0;
+
+	// Bus Terminator
+	while({i < allBus.size},
+		{
+			var bus, sender, receiver;
+
+			bus = allBus[i];
+			sender = bus.x;
+			receiver = bus.y;
+			if(((sender == clicked)||(receiver == clicked)),
+				{
+					allBus.removeAt(i);
+					allBusStart.removeAt(i);
+					allBusEnd.removeAt(i);
+
+				},
+				{
+					if((sender.notNil) && (sender > clicked)){
+						sender = sender-1;
+						allBus[i] = Point(sender, receiver);
+					};
+					if((receiver.notNil) && (receiver > clicked)){
+						receiver = receiver - 1;
+						allBus[i] = Point(sender, receiver);
+					};
+					i = i + 1;
+				}
+			);
+	});
+
+	//Synths Terminator
 	synths.removeAt(clicked);
 	synthTypes[clicked].remove;
 	synthTypes.removeAt(clicked);
 	clicked = nil;
-	[synths, clicked, synthTypes];
+
+	[synths, clicked, synthTypes, allBus, allBusStart, allBusEnd];
 };
 
 synthMovement = {
-	arg x, y, synths, synthTypes, clicked, mainVue, relativeWhere;
+	arg x, y, synths, synthTypes, clicked, mainVue,
+	relativeWhere, allBus, allBusStart, allBusEnd;
 	var synth, synthTmp, synthTypeTextTmp, tFieldTmp,
-	rectTmp, labelBackground, oldAction;
+	rectTmp, labelBackground, oldAction, centroid;
 
+	// Bus Movement
+	centroid = synths[clicked].origin;
+	centroid = Point(
+		(centroid.x+(mtsDict[\synthSize]/2)),
+		(centroid.y)+(mtsDict[\synthSize]/2));
+
+	allBus.do({
+		arg bus, i;
+		var sender, receiver;
+
+		sender = bus.x;
+		receiver = bus.y;
+
+		if((sender == clicked)){
+			allBusStart[i] = centroid;
+		};
+		if((receiver == clicked)){
+			allBusEnd[i] = centroid;
+		};
+
+	});
+
+	//Synths Movement
 	synth = synths.at(clicked);
 	synths.put(clicked, synth.origin =
 		(Point(x.asInteger, y.asInteger) - relativeWhere.asPoint));
@@ -85,12 +143,42 @@ synthMovement = {
 	};
 	synthTypes[clicked] = tFieldTmp;
 
-	[synths, synthTypes, clicked];
+	[synths, synthTypes, clicked, allBusStart, allBusEnd];
 };
 
+busCreator = {
+	arg allBusStart, allBusEnd, currBus, clicked, synths;
+	var centroid;
+
+	centroid = synths[clicked].origin;
+	centroid = Point(
+		(centroid.x+(mtsDict[\synthSize]/2)),
+		(centroid.y)+(mtsDict[\synthSize]/2));
+	allBusStart = allBusStart.add(centroid);
+	allBusEnd = allBusEnd.add(centroid);
+	currBus = allBusStart.size - 1;
+
+	[allBusStart, allBusEnd, currBus, clicked];
+};
+
+createBusEliminator = {
+	arg busEliminator, clicked, synths;
+	var centroid;
+
+	centroid = synths[clicked].origin;
+	centroid = Point(
+		(centroid.x+(mtsDict[\synthSize]/2)),
+		(centroid.y)+(mtsDict[\synthSize]/2));
+	busEliminator[2] = centroid;
+	busEliminator[3] = centroid;
+
+	busEliminator;
+};
 
 dict.put(\newSynth, synthCreator);
 dict.put(\deleteSynth, synthTerminator);
 dict.put(\synthMovement, synthMovement);
+dict.put(\createBus, busCreator);
+dict.put(\createBusEliminator, createBusEliminator);
 
 dict;

@@ -3,7 +3,6 @@ var synthNames =
 [
 	"In",
 	"Out",
-	"Martina",
 	"Midi"
 ];
 
@@ -20,7 +19,9 @@ dict.put(\synthFont, Font("Monaco", 14));
 dict.put(\synthSize, 80);
 dict.put(\menuColor, Color.gray(0.5));
 dict.put(\synthColor, Color.cyan(0.8));
+dict.put(\selSynthBlend, 0.9);
 dict.put(\busColor, Color.white(0.8));
+dict.put(\busEliminatorColor, Color.red(0.8));
 dict.put(\synthTypeLabelColor, Color.cyan(0.5));
 dict.put(\synthGoodTypeLabelColor, Color.cyan(0.9));
 dict.put(\synthTypeStringColor, Color.black);
