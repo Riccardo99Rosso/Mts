@@ -1,6 +1,6 @@
 var dict = Dictionary();
 var mtsDict, synthCreator, synthTerminator, synthMovement,
-busCreator, busEntered, createBusEliminator;
+busCreator, busInsertion, createBusEliminator, busEliminatorDone;
 
 mtsDict = FileLoader(~mtsConstantsPath);
 
@@ -20,8 +20,6 @@ synthCreator = {
 	tFieldTmp.stringColor_(mtsDict[\synthTypeStringColor]);
 	tFieldTmp.action = {
 		arg field;
-
-		"messo".postln;
 
 		if(((mtsDict[\synthNames].find([field.value])) != nil),
 			{
@@ -161,6 +159,36 @@ busCreator = {
 	[allBusStart, allBusEnd, currBus, clicked];
 };
 
+busInsertion = {
+	arg synths, busReceiver, clicked, allBus,
+	allBusStart, allBusEnd, currBus, x, y;
+	var centroid;
+
+	synths.do {
+		arg synth, i;
+		if(synth.contains(Point(x, y)), {
+			busReceiver = i;
+		});
+	};
+
+	if(((busReceiver == nil) || (busReceiver == clicked)),
+		{
+			allBusStart.removeAt(currBus);
+			allBusEnd.removeAt(currBus);
+		},
+		{
+			centroid = synths[busReceiver].origin;
+			centroid = Point(
+				(centroid.x+(mtsDict[\synthSize]/2)),
+				(centroid.y)+(mtsDict[\synthSize]/2));
+			allBusEnd[currBus] = centroid;
+			allBus = allBus.add(Point(clicked, busReceiver));
+		}
+	);
+
+	[allBus, allBusStart, allBusEnd, busReceiver];
+};
+
 createBusEliminator = {
 	arg busEliminator, clicked, synths;
 	var centroid;
@@ -179,6 +207,7 @@ dict.put(\newSynth, synthCreator);
 dict.put(\deleteSynth, synthTerminator);
 dict.put(\synthMovement, synthMovement);
 dict.put(\createBus, busCreator);
+dict.put(\busInsertion, busInsertion);
 dict.put(\createBusEliminator, createBusEliminator);
 
 dict;
