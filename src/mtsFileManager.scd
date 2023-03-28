@@ -7,7 +7,6 @@ newFile = {
 	arg path, synths, synthTypes, allBus,
 	allBusStart, allBusEnd, busEliminator, createBus;
 
-
 	synths = [];
 	synthTypes = [];
 	allBus = [];
@@ -15,7 +14,6 @@ newFile = {
 	allBusEnd = [];
 	busEliminator = [];
 	createBus = false;
-
 
 	[synths, synthTypes, allBus,
 		allBusStart, allBusEnd, busEliminator, createBus];
@@ -37,8 +35,6 @@ saveFile = {
 	file.write("\n");
 	synthTypes.do({
 		arg name, i;
-		"nome: ".post;
-		name.value.postln;
 		if(name == nil){
 			synthNames = synthNames.add("-");
 		};
@@ -105,7 +101,7 @@ openFile = {
 		tFieldTmp.stringColor_(mtsDict[\synthTypeStringColor]);
 		tFieldTmp.action = {
 			arg field;
-			if(((mtsDict[\synthNames].find([field.value])) != nil),
+			if(((~synthDefs.find([field.value])) != nil),
 				{
 					tFieldTmp.background_(mtsDict[\synthGoodTypeLabelColor]);
 				},

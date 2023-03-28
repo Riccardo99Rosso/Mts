@@ -7,7 +7,6 @@ mtsDict = FileLoader(~mtsConstantsPath);
 synthCreator = {
 	arg mainVue, x, y, synths, synthTypes;
 	var synth, tFieldTmp;
-
 	synth = Rect(x-10, y-10, mtsDict[\synthSize], mtsDict[\synthSize]);
 	tFieldTmp = TextField(mainVue,
 		Rect(
@@ -20,8 +19,7 @@ synthCreator = {
 	tFieldTmp.stringColor_(mtsDict[\synthTypeStringColor]);
 	tFieldTmp.action = {
 		arg field;
-
-		if(((mtsDict[\synthNames].find([field.value])) != nil),
+		if(((~synthDefs.find([field.value])) != nil),
 			{
 				tFieldTmp.background_(mtsDict[\synthGoodTypeLabelColor]);
 			},
@@ -130,7 +128,7 @@ synthMovement = {
 	tFieldTmp.action = {
 		arg field;
 
-		if(((mtsDict[\synthNames].find([field.value])) != nil),
+		if(((~synthDefs.find([field.value])) != nil),
 			{
 				tFieldTmp.background_(mtsDict[\synthGoodTypeLabelColor]);
 			},
@@ -161,7 +159,7 @@ busCreator = {
 
 busInsertion = {
 	arg synths, busReceiver, clicked, allBus,
-	allBusStart, allBusEnd, currBus, x, y;
+	allBusStart, allBusEnd, currBus, x, y, ok=true;
 	var centroid;
 
 	synths.do {
@@ -182,7 +180,23 @@ busInsertion = {
 				(centroid.x+(mtsDict[\synthSize]/2)),
 				(centroid.y)+(mtsDict[\synthSize]/2));
 			allBusEnd[currBus] = centroid;
-			allBus = allBus.add(Point(clicked, busReceiver));
+
+			allBus.do({
+				arg bus, i;
+				if((bus.x == clicked) && (bus.y == busReceiver)){
+					ok = false;
+				}
+			});
+
+			if((ok == true),
+				{
+					allBus = allBus.add(Point(clicked, busReceiver));
+				},
+				{
+					allBusStart.removeAt(currBus);
+					allBusEnd.removeAt(currBus);
+				}
+			);
 		}
 	);
 

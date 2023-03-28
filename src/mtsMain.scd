@@ -2,12 +2,13 @@
 var win, mainVue, s, synths = [], clicked = nil, relativeWhere, synthTypes = [],
 myX, myY, createBus = false, currBus, allBusStart = [],
 allBusEnd = [], allBus = [], busReceiver = nil, dirDist, scrollView,
-busEliminator = [], filePath = nil, saveAs, save, new, open;
-var mtsDict, mtsSynth, mtsWebDoc, mtsFileManager;
+busEliminator = [], filePath = nil, saveAs, save, new, open, serverStatus,
+serverStatGui, avgCpuGui, avgCpu;
+var mtsDict, mtsSynth, mtsWebDoc, mtsFileManager, mtsSynthDef;
 
 /*** INITIALIZATIONS ***/
 s = Server.local;
-
+~synthDefs = [];
 
 /*** IMPORTING ALL SCD FILES ***/
 ~path = thisProcess.nowExecutingPath.replace("mtsMain.scd", "");
@@ -15,26 +16,29 @@ s = Server.local;
 ~mtsSynthPath = ~path ++ "mtsSynth.scd";
 ~mtsWebDocPath = ~path ++ "mtsWebDocumentation.scd";
 ~mtsFileManager = ~path ++"mtsFileManager.scd";
+~mtsSynthDef = ~path ++ "mtsSynthDef.scd";
 mtsDict = FileLoader(~mtsConstantsPath);
 mtsSynth = FileLoader(~mtsSynthPath);
 mtsWebDoc = FileLoader(~mtsWebDocPath);
 mtsFileManager = FileLoader(~mtsFileManager);
+mtsSynthDef = FileLoader(~mtsSynthDef);
 
 /*** WINDOWS GENERATOR ***/
 win = Window(mtsDict[\title] ++ " - untitled.mt");
-scrollView = ScrollView(win, Rect(
-	0,
-	0,
-	mtsDict[\mainWidth],
-	mtsDict[\mainHeight]));
+scrollView = ScrollView(win);
 scrollView.resize = 5;
 
 mainVue = UserView(scrollView, Rect(
 	0,
 	0,
-	4000,
-	3000
+	mtsDict[\mainWidth],
+	mtsDict[\mainHeight]
 ));
+
+serverStatGui = Button().canFocus_(false).enabled_(false)
+.states_([["", Color.red, Color.red]]);
+
+avgCpuGui = StaticText().font_(mtsDict[\menuFont]);
 
 win.layout_(
 	VLayout(
@@ -66,6 +70,11 @@ win.layout_(
 			}).font_(mtsDict[\menuFont]),
 			MenuAction("Edit", {
 				Menu(
+					MenuAction("SynthDef Editor", {
+						mtsSynthDef[\showSynthDef].();
+					})
+					.font_(mtsDict[\menuFont])
+					.shortcut_("Ctrl+shift+p"),
 					MenuAction("Preferences", {
 						"Preferences".postln
 					}).font_(mtsDict[\menuFont])
@@ -76,10 +85,17 @@ win.layout_(
 			).font_(mtsDict[\menuFont]),
 			MenuAction("Audio", {
 				Menu(
-					MenuAction("Audio drivers", {
+					MenuAction("Audio Drivers", {
 						AudioDrivers().booter;
-					}).font_(mtsDict[\menuFont])
+					}).font_(mtsDict[\menuFont]),
+					MenuAction("Load all SynthDef", {
+						mtsSynthDef[\loadAll].();
+					}).font_(mtsDict[\menuFont]),
+					MenuAction("Deactivate", {
+						Server.killAll;
+					}).font_(mtsDict[\menuFont]),
 				).front
+
 			}).font_(mtsDict[\menuFont]),
 			MenuAction("Help",{
 				Menu(
@@ -87,7 +103,9 @@ win.layout_(
 						mtsWebDoc[\webDoc].();
 					}).font_(mtsDict[\menuFont])
 				).front
-			}).font_(mtsDict[\menuFont]);
+			}).font_(mtsDict[\menuFont]),
+			serverStatGui,
+			avgCpuGui,
 		),
 		scrollView
 	).margins_(0).spacing_(0);
@@ -191,7 +209,6 @@ mainVue.mouseDownAction = {
 			}),
 			MenuAction("Delete synth", {
 				var busSize, toRemove, allBusTmp, i = 0;
-
 				#synths, clicked, synthTypes, allBus, allBusStart, allBusEnd =
 				mtsSynth[\deleteSynth].(
 					synths, clicked, synthTypes, allBus, allBusStart, allBusEnd
@@ -253,7 +270,6 @@ mainVue.mouseMoveAction = {
 mainVue.mouseUpAction = {
 	arg v, x, y, mod, button;
 	var i;
-
 	if((button == mtsDict[\leftClick]) && (createBus == true)) {
 		createBus = false;
 
@@ -297,7 +313,6 @@ mainVue.mouseUpAction = {
 			});
 		}
 	};
-
 	busEliminator = [];
 	clicked = nil;
 	win.refresh;
@@ -364,12 +379,21 @@ mainVue.keyDownAction = {
 		open.();
 	};
 
+	if((modifiers == 393216) && (keycode == 80)){
+		mtsSynthDef[\showSynthDef].()
+	};
+
+
 	//[view, char, modifiers, unicode, keycode].postln;
 };
 
 
 /*** CLOSING ALL ***/
-win.onClose = {Window.closeAll; Server.freeAll;};
+win.onClose = {
+	Window.closeAll;
+	Server.freeAll;
+	serverStatus.stop;
+};
 
 
 /** FILE FUNCTIONS **/
@@ -440,9 +464,43 @@ open = {
 		win.name = mtsDict[\title] ++ " - " ++ name;
 		win.refresh;
 	},{
-		"cancelled".postln;
+
 	});
 };
 
+avgCpu = Routine{
+	var tmpValCpu;
+
+	loop{
+		if(s.serverRunning,
+			{
+				tmpValCpu = "  " ++ s.avgCPU.trunc(0.01) ++ "%";
+			},
+			{
+				tmpValCpu = "  " ++ "0.00%";
+			}
+		);
+
+		avgCpuGui.string_(tmpValCpu);
+
+		2.wait;
+	}
+}.play(AppClock);
+
+serverStatus = Routine{
+	loop{
+		if(s.serverRunning,
+			{
+				serverStatGui.states_([["", Color.green, Color.green]]);
+			},
+			{
+				serverStatGui.states_([["", Color.red, Color.red]]);
+			}
+		);
+		5.wait;
+	}
+}.play(AppClock);
 
 )
+
+Synth(\Mic)
