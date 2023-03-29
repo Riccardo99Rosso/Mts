@@ -1,13 +1,17 @@
 var dict = Dictionary();
 var mtsDict, synthCreator, synthTerminator, synthMovement,
-busCreator, busInsertion, createBusEliminator, busEliminatorDone;
+busCreator, busInsertion, createBusEliminator, busEliminatorDone,
+mtsScSynth;
 
 mtsDict = FileLoader(~mtsConstantsPath);
+mtsScSynth = FileLoader(~mtsScSynthPath);
 
 synthCreator = {
 	arg mainVue, x, y, synths, synthTypes;
-	var synth, tFieldTmp;
+	var synth, tFieldTmp, clicked;
 	synth = Rect(x-10, y-10, mtsDict[\synthSize], mtsDict[\synthSize]);
+	clicked = synthTypes.size;
+	~scSynths = ~scSynths.add(clicked);
 	tFieldTmp = TextField(mainVue,
 		Rect(
 			x-3,
@@ -22,6 +26,7 @@ synthCreator = {
 		if(((~synthDefs.find([field.value])) != nil),
 			{
 				tFieldTmp.background_(mtsDict[\synthGoodTypeLabelColor]);
+				mtsScSynth[\createScSynth].(clicked, (field.value).asString);
 			},
 			{
 				tFieldTmp.background_(mtsDict[\synthTypeLabelColor]);
@@ -67,7 +72,11 @@ synthTerminator = {
 	});
 
 	//Synths Terminator
+	if((~synthDefs.find([synthTypes[clicked].value])) != nil) {
+		~scSynths[clicked].free;
+	};
 	synths.removeAt(clicked);
+	~scSynths.removeAt(clicked);
 	synthTypes[clicked].remove;
 	synthTypes.removeAt(clicked);
 	clicked = nil;
@@ -127,10 +136,10 @@ synthMovement = {
 	tFieldTmp.string = synthTypeTextTmp;
 	tFieldTmp.action = {
 		arg field;
-
 		if(((~synthDefs.find([field.value])) != nil),
 			{
 				tFieldTmp.background_(mtsDict[\synthGoodTypeLabelColor]);
+				mtsScSynth[\createScSynth].(clicked, (field.value).asString);
 			},
 			{
 				tFieldTmp.background_(mtsDict[\synthTypeLabelColor]);

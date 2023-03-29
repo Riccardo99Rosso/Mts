@@ -30,20 +30,15 @@ SynthDef(\Out2, {
 Server.default.options.numBuffers = 1024;
 s.newBusAllocators;
 
+b = Bus.audio(s, 1);
+
 (
-var b1, b2, gOut, gIn, xG, oG;
-b1 = Bus.audio(s, 1);
-b2 = Bus.audio(s, 1);
-gOut = Group(s);
-gIn = Group(s, \addToHead);
-
-xG = 0;
-oG = gOut;
-
-x = Synth(\Mic, [\in, 0, \out, b1], xG);
-o = Synth(\Out2, [\in, b1, \out, 0], oG);
-xG = Group(s);
+x = Synth(\Mic, [\in, 0, \out, b]);
+o = Synth(\Out2, [\in, b, \out, 0]);
 )
+
+o.moveAfter(x);
+o.moveBefore(x);
 
 
 o.set(\out, 0)

@@ -36,7 +36,7 @@ showSynthDef = {
 					);
 					file.close;
 
-					tWin = Window(name, Rect(800, 350, 300, 350), false);
+					tWin = Window(sName.string, Rect(800, 350, 300, 350), false);
 					tView = TextView(tWin, Rect(
 						0,
 						0,

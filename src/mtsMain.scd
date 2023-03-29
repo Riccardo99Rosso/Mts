@@ -3,25 +3,30 @@ var win, mainVue, s, synths = [], clicked = nil, relativeWhere, synthTypes = [],
 myX, myY, createBus = false, currBus, allBusStart = [],
 allBusEnd = [], allBus = [], busReceiver = nil, dirDist, scrollView,
 busEliminator = [], filePath = nil, saveAs, save, new, open, serverStatus,
-serverStatGui, avgCpuGui, avgCpu;
-var mtsDict, mtsSynth, mtsWebDoc, mtsFileManager, mtsSynthDef;
+serverStatGui, avgCpuGui, avgCpu, safeMode = false;
+var mtsDict, mtsSynth, mtsWebDoc, mtsFileManager, mtsSynthDef, mtsScSynth;
 
 /*** INITIALIZATIONS ***/
 s = Server.local;
 ~synthDefs = [];
+~scSynths = [];
+~garbageBus = Bus.audio(s);
+~inGarbageBus = Bus.audio(s);
 
 /*** IMPORTING ALL SCD FILES ***/
 ~path = thisProcess.nowExecutingPath.replace("mtsMain.scd", "");
 ~mtsConstantsPath = ~path ++ "mtsConstants.scd";
 ~mtsSynthPath = ~path ++ "mtsSynth.scd";
 ~mtsWebDocPath = ~path ++ "mtsWebDocumentation.scd";
-~mtsFileManager = ~path ++"mtsFileManager.scd";
-~mtsSynthDef = ~path ++ "mtsSynthDef.scd";
+~mtsFileManagerPath = ~path ++"mtsFileManager.scd";
+~mtsSynthDefPath = ~path ++ "mtsSynthDef.scd";
+~mtsScSynthPath = ~path ++ "mtsScSynth.scd";
 mtsDict = FileLoader(~mtsConstantsPath);
 mtsSynth = FileLoader(~mtsSynthPath);
 mtsWebDoc = FileLoader(~mtsWebDocPath);
-mtsFileManager = FileLoader(~mtsFileManager);
-mtsSynthDef = FileLoader(~mtsSynthDef);
+mtsFileManager = FileLoader(~mtsFileManagerPath);
+mtsSynthDef = FileLoader(~mtsSynthDefPath);
+mtsScSynth = FileLoader(~mtsScSynthPath);
 
 /*** WINDOWS GENERATOR ***/
 win = Window(mtsDict[\title] ++ " - untitled.mt");
@@ -75,6 +80,19 @@ win.layout_(
 					})
 					.font_(mtsDict[\menuFont])
 					.shortcut_("Ctrl+shift+p"),
+					MenuAction("Safe Mode", {
+						safeMode = safeMode.not;
+						if((safeMode == true),
+							{
+								win.userCanClose = false;
+							},
+							{
+								win.userCanClose = true;
+							}
+						)
+					})
+					.font_(mtsDict[\menuFont])
+					.checked_(safeMode),
 					MenuAction("Preferences", {
 						"Preferences".postln
 					}).font_(mtsDict[\menuFont])
@@ -205,7 +223,7 @@ mainVue.mouseDownAction = {
 		Menu(
 			MenuAction.separator.string_("Mts"),
 			MenuAction("Properties", {
-				"Properties".postln;
+				mtsScSynth[\properties].(clicked);
 			}),
 			MenuAction("Delete synth", {
 				var busSize, toRemove, allBusTmp, i = 0;
@@ -502,5 +520,5 @@ serverStatus = Routine{
 }.play(AppClock);
 
 )
-
 Synth(\Mic)
+~scSynth
