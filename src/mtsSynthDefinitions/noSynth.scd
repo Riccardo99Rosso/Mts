@@ -1,0 +1,5 @@
+(
+SynthDef(\noSynth, {
+	
+}).add;
+)

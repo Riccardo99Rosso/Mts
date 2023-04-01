@@ -22,13 +22,20 @@ createScSynth = {
 	if((name.containsStringAt(0, "Out") == true),
 		{
 			name = name.asSymbol;
+			~scSynths[clicked].free;
 			~scSynths[clicked] = Synth(name, [\out, 0, \in, ~inGarbageBus]);
 		},
 		{
 			name = name.asSymbol;
+			~scSynths[clicked].free;
 			~scSynths[clicked] = Synth(name, [\out, ~garbageBus]);
 		}
 	);
+	~allBus.do({
+		arg bus, i;
+		~scSynths[bus.y].moveAfter(~scSynths[bus.x]);
+	});
+
 };
 
 dict.put(\properties, properties);

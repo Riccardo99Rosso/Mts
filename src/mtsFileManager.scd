@@ -4,23 +4,23 @@ var mtsDict, newFile, saveFile, openFile;
 mtsDict = FileLoader(~mtsConstantsPath);
 
 newFile = {
-	arg path, synths, synthTypes, allBus,
+	arg path, synths, synthTypes,
 	allBusStart, allBusEnd, busEliminator, createBus;
 
 	synths = [];
 	synthTypes = [];
-	allBus = [];
+	~allBus = [];
 	allBusStart = [];
 	allBusEnd = [];
 	busEliminator = [];
 	createBus = false;
 
-	[synths, synthTypes, allBus,
+	[synths, synthTypes, ~allBus,
 		allBusStart, allBusEnd, busEliminator, createBus];
 };
 
 saveFile = {
-	arg path, synths, synthTypes, allBus,
+	arg path, synths, synthTypes,
 	allBusStart, allBusEnd, synthNames = [];
 	var file, buffer, name;
 
@@ -45,7 +45,7 @@ saveFile = {
 	});
 	file.write(synthNames.asString);
 	file.write("\n");
-	file.write(allBus.asString);
+	file.write(~allBus.asString);
 	file.write("\n");
 	file.write(allBusStart.asString);
 	file.write("\n");
@@ -59,7 +59,7 @@ saveFile = {
 openFile = {
 
 	arg path, mainVue;
-	var synths =  [], synthTypes = [], allBus = [],
+	var synths =  [], synthTypes = [],
 	allBusStart = [], allBusEnd = [], buffer, name,
 	synthNames = [], toSave, file, tFieldTmp;
 
@@ -73,7 +73,7 @@ openFile = {
 	file.close;
 
 	synths = this.interpret(toSave[0]);
-	allBus = this.interpret(toSave[2]);
+	~allBus = this.interpret(toSave[2]);
 	allBusStart = this.interpret(toSave[3]);
 	allBusEnd = this.interpret(toSave[4]);
 
@@ -112,11 +112,12 @@ openFile = {
 		};
 
 		tFieldTmp.valueAction = buffer[i].asString;
+		buffer[i].postln;
 		synthTypes = synthTypes.add(tFieldTmp);
 
 	});
 
-	[synths, synthTypes, allBus,
+	[synths, synthTypes,
 		allBusStart, allBusEnd, name];
 };
 

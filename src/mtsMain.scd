@@ -1,7 +1,7 @@
 (
 var win, mainVue, s, synths = [], clicked = nil, relativeWhere, synthTypes = [],
 myX, myY, createBus = false, currBus, allBusStart = [],
-allBusEnd = [], allBus = [], busReceiver = nil, dirDist, scrollView,
+allBusEnd = [], busReceiver = nil, dirDist, scrollView,
 busEliminator = [], filePath = nil, saveAs, save, new, open, serverStatus,
 serverStatGui, avgCpuGui, avgCpu, safeMode = false;
 var mtsDict, mtsSynth, mtsWebDoc, mtsFileManager, mtsSynthDef, mtsScSynth;
@@ -10,6 +10,7 @@ var mtsDict, mtsSynth, mtsWebDoc, mtsFileManager, mtsSynthDef, mtsScSynth;
 s = Server.local;
 ~synthDefs = [];
 ~scSynths = [];
+~allBus = [];
 ~garbageBus = Bus.audio(s);
 ~inGarbageBus = Bus.audio(s);
 
@@ -105,6 +106,18 @@ win.layout_(
 				Menu(
 					MenuAction("Audio Drivers", {
 						AudioDrivers().booter;
+						s.waitForBoot({
+							mtsSynthDef[\loadAll].();
+							synthTypes.do({
+								arg synth, i;
+								mtsScSynth[\createScSynth].
+								(i, synth.value);
+							});
+							~allBus.do({
+								arg bus, i;
+								~scSynths[bus.y].moveAfter(~scSynths[bus.x]);
+							});
+						});
 					}).font_(mtsDict[\menuFont]),
 					MenuAction("Load all SynthDef", {
 						mtsSynthDef[\loadAll].();
@@ -201,12 +214,16 @@ mainVue.mouseDownAction = {
 		Menu(
 			MenuAction.separator.string_("Mts"),
 			MenuAction("New synth", {
+				busEliminator = [];
+				createBus = false;
 				#synths, synthTypes = mtsSynth[\newSynth].
 				(mainVue, x, y, synths, synthTypes);
 				win.refresh;
 			}).shortcut_("s"),
 			MenuAction("Delete bus", {
 				var synths, pos, bTmp;
+				busEliminator = [];
+				createBus = false;
 				busEliminator = busEliminator.add(0);
 				busEliminator = busEliminator.add(1);
 				busEliminator = busEliminator.add(Point(0,0));
@@ -223,13 +240,17 @@ mainVue.mouseDownAction = {
 		Menu(
 			MenuAction.separator.string_("Mts"),
 			MenuAction("Properties", {
+				busEliminator = [];
+				createBus = false;
 				mtsScSynth[\properties].(clicked);
 			}),
 			MenuAction("Delete synth", {
 				var busSize, toRemove, allBusTmp, i = 0;
-				#synths, clicked, synthTypes, allBus, allBusStart, allBusEnd =
+				busEliminator = [];
+				createBus = false;
+				#synths, clicked, synthTypes, allBusStart, allBusEnd =
 				mtsSynth[\deleteSynth].(
-					synths, clicked, synthTypes, allBus, allBusStart, allBusEnd
+					synths, clicked, synthTypes, allBusStart, allBusEnd
 				);
 				win.refresh;
 			})
@@ -262,26 +283,23 @@ mainVue.mouseMoveAction = {
 		(y > 0) &&
 		(x <= (mainVue.bounds.width)) &&
 		(y <= (mainVue.bounds.height))){
-
 		#synths, synthTypes, clicked, allBusStart, allBusEnd =
 		mtsSynth[\synthMovement].(
 			x, y, synths, synthTypes, clicked, mainVue,
-			relativeWhere, allBus, allBusStart, allBusEnd);
-		win.refresh;
+			relativeWhere, allBusStart, allBusEnd);
 	};
 
 	if((createBus == true)) {
 		allBusEnd[currBus] = Point(x, y);
-		win.refresh;
 	};
 
 	if(busEliminator[0].notNil){
 		busEliminator[3] = Point(x, y);
-		win.refresh;
 	};
 
 	myX = x;
 	myY = y;
+	win.refresh;
 
 };
 
@@ -291,13 +309,11 @@ mainVue.mouseUpAction = {
 	if((button == mtsDict[\leftClick]) && (createBus == true)) {
 		createBus = false;
 
-
-		# allBus, allBusStart, allBusEnd, busReceiver =
+		#allBusStart, allBusEnd, busReceiver =
 		mtsSynth[\busInsertion].(
-			synths, busReceiver, clicked, allBus,
+			synths, busReceiver, clicked,
 			allBusStart, allBusEnd, currBus, x, y
 		);
-
 	};
 
 	if((button == mtsDict[\leftClick]) && (busEliminator[0].notNil)){
@@ -310,16 +326,16 @@ mainVue.mouseUpAction = {
 		};
 		if((busReceiver.notNil) && (busReceiver != clicked)){
 			i = 0;
-			while({i < allBus.size},
+			while({i < ~allBus.size},
 				{
 					var bus, sender, receiver;
 
-					bus = allBus[i];
+					bus = ~allBus[i];
 					sender = bus.x;
 					receiver = bus.y;
 					if(((sender == clicked)&&(receiver == busReceiver)),
 						{
-							allBus.removeAt(i);
+							~allBus.removeAt(i);
 							allBusStart.removeAt(i);
 							allBusEnd.removeAt(i);
 
@@ -331,6 +347,7 @@ mainVue.mouseUpAction = {
 			});
 		}
 	};
+
 	busEliminator = [];
 	clicked = nil;
 	win.refresh;
@@ -417,11 +434,11 @@ win.onClose = {
 /** FILE FUNCTIONS **/
 new = {
 	filePath = nil;
-	# synths, synthTypes, allBus,
+	# synths, synthTypes,
 	allBusStart, allBusEnd, busEliminator,
 	createBus =
 	mtsFileManager[\newFile].(
-		synths, synthTypes, allBus,
+		synths, synthTypes,
 		allBusStart, allBusEnd,
 		busEliminator, createBus
 	);
@@ -437,7 +454,7 @@ saveAs = {
 		filePath = path;
 		# name =
 		mtsFileManager[\saveFile].(
-			path, synths, synthTypes, allBus,
+			path, synths, synthTypes,
 			allBusStart, allBusEnd
 		);
 		win.name = mtsDict[\title] ++ " - " ++ name;
@@ -454,7 +471,7 @@ save = {
 				filePath = path;
 				# name =
 				mtsFileManager[\saveFile].(
-					path, synths, synthTypes, allBus,
+					path, synths, synthTypes,
 					allBusStart, allBusEnd
 				);
 				win.name = mtsDict[\title] ++ " - " ++ name;
@@ -463,7 +480,7 @@ save = {
 		},
 		{
 			mtsFileManager[\saveFile].(
-				filePath, synths, synthTypes, allBus,
+				filePath, synths, synthTypes,
 				allBusStart, allBusEnd
 			);
 		}
@@ -476,10 +493,12 @@ open = {
 		var name;
 		new.();
 		filePath = path;
-		# synths, synthTypes, allBus,
+		# synths, synthTypes,
 		allBusStart, allBusEnd, name =
 		mtsFileManager[\openFile].(path, mainVue);
 		win.name = mtsDict[\title] ++ " - " ++ name;
+		createBus = false;
+		busEliminator = [];
 		win.refresh;
 	},{
 

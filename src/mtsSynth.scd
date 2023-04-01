@@ -1,7 +1,7 @@
 var dict = Dictionary();
 var mtsDict, synthCreator, synthTerminator, synthMovement,
 busCreator, busInsertion, createBusEliminator, busEliminatorDone,
-mtsScSynth;
+mtsScSynth, has_cycle;
 
 mtsDict = FileLoader(~mtsConstantsPath);
 mtsScSynth = FileLoader(~mtsScSynthPath);
@@ -12,6 +12,7 @@ synthCreator = {
 	synth = Rect(x-10, y-10, mtsDict[\synthSize], mtsDict[\synthSize]);
 	clicked = synthTypes.size;
 	~scSynths = ~scSynths.add(clicked);
+	mtsScSynth[\createScSynth].(clicked, "noSynth");
 	tFieldTmp = TextField(mainVue,
 		Rect(
 			x-3,
@@ -26,7 +27,7 @@ synthCreator = {
 		if(((~synthDefs.find([field.value])) != nil),
 			{
 				tFieldTmp.background_(mtsDict[\synthGoodTypeLabelColor]);
-				mtsScSynth[\createScSynth].(clicked, (field.value).asString);
+				//mtsScSynth[\createScSynth].(clicked, (field.value).asString);
 			},
 			{
 				tFieldTmp.background_(mtsDict[\synthTypeLabelColor]);
@@ -39,20 +40,20 @@ synthCreator = {
 };
 
 synthTerminator = {
-	arg synths, clicked, synthTypes, allBus, allBusStart, allBusEnd;
+	arg synths, clicked, synthTypes, allBusStart, allBusEnd;
 	var i = 0;
 
 	// Bus Terminator
-	while({i < allBus.size},
+	while({i < ~allBus.size},
 		{
 			var bus, sender, receiver;
 
-			bus = allBus[i];
+			bus = ~allBus[i];
 			sender = bus.x;
 			receiver = bus.y;
 			if(((sender == clicked)||(receiver == clicked)),
 				{
-					allBus.removeAt(i);
+					~allBus.removeAt(i);
 					allBusStart.removeAt(i);
 					allBusEnd.removeAt(i);
 
@@ -60,11 +61,11 @@ synthTerminator = {
 				{
 					if((sender.notNil) && (sender > clicked)){
 						sender = sender-1;
-						allBus[i] = Point(sender, receiver);
+						~allBus[i] = Point(sender, receiver);
 					};
 					if((receiver.notNil) && (receiver > clicked)){
 						receiver = receiver - 1;
-						allBus[i] = Point(sender, receiver);
+						~allBus[i] = Point(sender, receiver);
 					};
 					i = i + 1;
 				}
@@ -72,21 +73,19 @@ synthTerminator = {
 	});
 
 	//Synths Terminator
-	if((~synthDefs.find([synthTypes[clicked].value])) != nil) {
-		~scSynths[clicked].free;
-	};
+	~scSynths[clicked].free;
 	synths.removeAt(clicked);
 	~scSynths.removeAt(clicked);
 	synthTypes[clicked].remove;
 	synthTypes.removeAt(clicked);
 	clicked = nil;
 
-	[synths, clicked, synthTypes, allBus, allBusStart, allBusEnd];
+	[synths, clicked, synthTypes, allBusStart, allBusEnd];
 };
 
 synthMovement = {
 	arg x, y, synths, synthTypes, clicked, mainVue,
-	relativeWhere, allBus, allBusStart, allBusEnd;
+	relativeWhere, allBusStart, allBusEnd;
 	var synth, synthTmp, synthTypeTextTmp, tFieldTmp,
 	rectTmp, labelBackground, oldAction, centroid;
 
@@ -96,7 +95,7 @@ synthMovement = {
 		(centroid.x+(mtsDict[\synthSize]/2)),
 		(centroid.y)+(mtsDict[\synthSize]/2));
 
-	allBus.do({
+	~allBus.do({
 		arg bus, i;
 		var sender, receiver;
 
@@ -139,7 +138,7 @@ synthMovement = {
 		if(((~synthDefs.find([field.value])) != nil),
 			{
 				tFieldTmp.background_(mtsDict[\synthGoodTypeLabelColor]);
-				mtsScSynth[\createScSynth].(clicked, (field.value).asString);
+				//mtsScSynth[\createScSynth].(clicked, (field.value).asString);
 			},
 			{
 				tFieldTmp.background_(mtsDict[\synthTypeLabelColor]);
@@ -167,9 +166,9 @@ busCreator = {
 };
 
 busInsertion = {
-	arg synths, busReceiver, clicked, allBus,
+	arg synths, busReceiver, clicked,
 	allBusStart, allBusEnd, currBus, x, y, ok=true;
-	var centroid;
+	var centroid, hasCycle = false, visited, stack;
 
 	synths.do {
 		arg synth, i;
@@ -190,7 +189,7 @@ busInsertion = {
 				(centroid.y)+(mtsDict[\synthSize]/2));
 			allBusEnd[currBus] = centroid;
 
-			allBus.do({
+			~allBus.do({
 				arg bus, i;
 				if((bus.x == clicked) && (bus.y == busReceiver)){
 					ok = false;
@@ -199,7 +198,22 @@ busInsertion = {
 
 			if((ok == true),
 				{
-					allBus = allBus.add(Point(clicked, busReceiver));
+					~allBus = ~allBus.add(Point(clicked, busReceiver));
+					//synths.postln;
+					//~allBus.postln;
+					if(has_cycle.(synths) == true){
+						~allBus.pop();
+						allBusStart.removeAt(currBus);
+						allBusEnd.removeAt(currBus);
+					}
+
+					/*
+					~allBus.do({
+					arg bus, i;
+					~scSynths[bus.y].moveAfter(~scSynths[bus.x]);
+					});
+					*/
+
 				},
 				{
 					allBusStart.removeAt(currBus);
@@ -209,7 +223,7 @@ busInsertion = {
 		}
 	);
 
-	[allBus, allBusStart, allBusEnd, busReceiver];
+	[allBusStart, allBusEnd, busReceiver];
 };
 
 createBusEliminator = {
@@ -226,6 +240,58 @@ createBusEliminator = {
 	busEliminator;
 };
 
+has_cycle = {
+	arg nodes;
+	var visited = [], stack = [], node = nil, nodi = [], archi = [],
+	current = nil, unvisited_neighbours = nil, edge = nil, ret = false;
+
+	//nodi = nodes.asList;
+	nodi = Array.fill(nodes.size, {
+		arg i;
+		i;
+	});
+	archi = ~allBus;
+	//archi.postln;
+	while({(nodi.size > 0) && (ret == false)}, {
+		node = nodi.pop();
+		//nodi.postln;
+		//node.postln;
+		if(visited.find([node]) == nil){
+			visited = visited.add(node);
+			stack = stack.add(node);
+			//postf("visited: %\n", visited);
+			//postf("stack: %\n", stack);
+			while({(stack.size > 0) && (ret == false)}, {
+				current = stack[stack.size - 1];
+				unvisited_neighbours = false;
+				archi.do({
+					arg edge, i;
+					if(edge.x == current){
+						if((visited.find([edge.y]) == nil),
+							{
+								unvisited_neighbours = true;
+								visited = visited.add(edge.y);
+								stack = stack.add(edge.y);
+							},
+							{
+								if(stack.find([edge.y]) != nil){
+									ret = true;
+								}
+							}
+						);
+					}
+				});
+				if(unvisited_neighbours == false){
+					stack.pop();
+				}
+			});
+		};
+
+	});
+
+	ret;
+};
+
 dict.put(\newSynth, synthCreator);
 dict.put(\deleteSynth, synthTerminator);
 dict.put(\synthMovement, synthMovement);
@@ -234,3 +300,13 @@ dict.put(\busInsertion, busInsertion);
 dict.put(\createBusEliminator, createBusEliminator);
 
 dict;
+
+
+
+
+
+
+
+
+
+
