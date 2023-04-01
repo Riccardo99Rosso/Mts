@@ -1,7 +1,8 @@
 var dict = Dictionary();
-var mtsDict, newFile, saveFile, openFile;
+var mtsDict, newFile, saveFile, openFile, mtsSynth;
 
 mtsDict = FileLoader(~mtsConstantsPath);
+mtsSynth = FileLoader(~mtsSynthPath);
 
 newFile = {
 	arg path, synths, synthTypes,
@@ -82,6 +83,7 @@ openFile = {
 	buffer = buffer.replace("]", "");
 	buffer = buffer.replace(" ", "");
 	buffer = buffer.split($,);
+	synths.postln;
 
 	synths.do({
 		arg synth, i;
@@ -89,6 +91,7 @@ openFile = {
 
 		x = (synth.origin.x+10);
 		y = (synth.origin.y+10);
+
 
 		tFieldTmp = TextField(mainVue,
 			Rect(
@@ -99,21 +102,21 @@ openFile = {
 		tFieldTmp.font = mtsDict[\synthFont];
 		tFieldTmp.background_(mtsDict[\synthTypeLabelColor]);
 		tFieldTmp.stringColor_(mtsDict[\synthTypeStringColor]);
-		tFieldTmp.action = {
+		synthTypes = synthTypes.add(tFieldTmp);
+		synthTypes[(synthTypes.size)-1].action = {
 			arg field;
 			if(((~synthDefs.find([field.value])) != nil),
 				{
-					tFieldTmp.background_(mtsDict[\synthGoodTypeLabelColor]);
+					synthTypes[i].background_(mtsDict[\synthGoodTypeLabelColor]);
 				},
 				{
-					tFieldTmp.background_(mtsDict[\synthTypeLabelColor]);
+					synthTypes[i].background_(mtsDict[\synthTypeLabelColor]);
 				}
 			);
 		};
 
 		tFieldTmp.valueAction = buffer[i].asString;
 		buffer[i].postln;
-		synthTypes = synthTypes.add(tFieldTmp);
 
 	});
 

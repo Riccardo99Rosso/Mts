@@ -11,8 +11,8 @@ synthCreator = {
 	var synth, tFieldTmp, clicked;
 	synth = Rect(x-10, y-10, mtsDict[\synthSize], mtsDict[\synthSize]);
 	clicked = synthTypes.size;
-	~scSynths = ~scSynths.add(clicked);
-	mtsScSynth[\createScSynth].(clicked, "noSynth");
+	//~scSynths = ~scSynths.add(clicked);
+	//mtsScSynth[\createScSynth].(clicked, "noSynth");
 	tFieldTmp = TextField(mainVue,
 		Rect(
 			x-3,
@@ -122,7 +122,7 @@ synthMovement = {
 	);
 	synthTmp.origin = (Point(x+10, y+10) - relativeWhere);
 
-	synthTypeTextTmp = synthTypes[clicked].string;
+	synthTypeTextTmp = synthTypes[clicked].value;
 	oldAction = synthTypes[clicked].action;
 	labelBackground = synthTypes[clicked].background;
 	synthTypes[clicked].remove;
@@ -132,7 +132,7 @@ synthMovement = {
 	tFieldTmp.font = mtsDict[\synthFont];
 	tFieldTmp.background_(labelBackground);
 	tFieldTmp.stringColor_(mtsDict[\synthTypeStringColor]);
-	tFieldTmp.string = synthTypeTextTmp;
+	tFieldTmp.value = synthTypeTextTmp;
 	tFieldTmp.action = {
 		arg field;
 		if(((~synthDefs.find([field.value])) != nil),
